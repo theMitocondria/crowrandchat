@@ -86,15 +86,15 @@ class Manager
             std::lock_guard<std::mutex> _(mtx);
             users.push(conn);
            
-            if(users.size()<1) return;
+            if(users.size()<=1) return;
             else
             {
-                Client* conn = users.front();
+                Client* conn1 = users.front();
                 users.pop();
                 Client* conn2 = users.front();
                 users.pop();
-                Room * room = new Room(conn , conn2 );
-                rooms[conn->conn] = room;
+                Room * room = new Room(conn1 , conn2 );
+                rooms[conn1->conn] = room;
                 rooms[conn2->conn] = room;
             }
         }
@@ -111,12 +111,15 @@ int main()
    .onopen([&](crow::websocket::connection& conn){
         CROW_LOG_INFO << "new websocket connection from " << conn.get_remote_ip();
         CROW_LOG_ERROR<<"asdasdsadsa";
+        
         manager->add(new Client("username", &conn));
     })
     .onmessage([&](crow::websocket::connection& conn, const std::string& data, bool is_binary) {
+        CROW_LOG_INFO << "message from frontend :" << data;
         if(data == "ping"){
             conn.send_text("pong");
         }else{
+            CROW_LOG_INFO << "message from frontend :" << data;
             auto room = manager->rooms.find(&conn);
             if(room != manager->rooms.end()){
                 room->second->send(&conn, data);
